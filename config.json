@@ -1,0 +1,90 @@
+{
+  "output": "my_memory_notebook.pdf",
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margin": 10
+  },
+  "header": {
+    "height": 30,
+    "field_margin": 5,
+    "field_vertical_padding": 6,
+    "field_spacing": 5,
+    "label_padding": 2,
+    "quote_label_padding": 5,
+    "fields": [
+      {
+        "label": "日期",
+        "text_alignment": "left",
+        "text_padding": 5,
+        "vertical_alignment": "top",
+        "vertical_padding": 5,
+        "width": "auto"
+      },
+      {
+        "label": "天气",
+        "text_alignment": "left",
+        "text_padding": 5,
+        "vertical_alignment": "top",
+        "vertical_padding": 5,
+        "width": "auto"
+      },
+      {
+        "label": "复习标记",
+        "text_alignment": "left",
+        "text_padding": 5,
+        "vertical_alignment": "top",
+        "vertical_padding": 5,
+        "width": "auto"
+      }
+    ],
+    "quote_box": {
+      "height": 40,
+      "label": "今日箴言",
+      "vertical_padding": 3
+    }
+  },
+  "footer": {
+    "height": 25,
+    "review_box_width": "auto",
+    "review_label_left_margin": 5,
+    "review_text_bottom_margin": 6,
+    "review_text_right_spacing": 40,
+    "review_box_height": 5,
+    "review_box_top_margin": 10,
+    "review_box_text_padding": 2,
+    "review_box_text_bottom_margin": 5,
+    "review_box_spacing": 10,
+    "note_label_left_margin": 5,
+    "note_text_bottom_margin": 5,
+    "note_label": "备注",
+    "review_boxes": ["第2天", "第7天", "第15天", "第28天", "第49天", "第83天"],
+    "review_text_alignment": "center"
+  },
+  "module_spacing": 5,
+  "modules": [
+    {
+      "type": "cornell",
+      "theme_height": 30,
+      "summary_height": 30,
+      "keyword_width_ratio": 0.3,
+      "line_style": "four_line_three_grid",
+      "grid_offset_x": 2,
+      "grid_offset_y": 4,
+      "grid_width_reduction": 4,
+      "grid_height_reduction": 6,
+      "grid_line_spacing": 6,
+      "grid_row_heights": [4, 6, 4]
+    },
+    {
+      "type": "cornell",
+      "theme_height": 30,
+      "summary_height": 30,
+      "keyword_width_ratio": 0.3,
+      "line_style": "single_line",
+      "line_step": 14,
+      "grid_offset_x": 2,
+      "grid_offset_y": 4
+    }
+  ]
+}
