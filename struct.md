@@ -27,11 +27,11 @@ Contains only one element:
 ### L0[2] - Cornell Note Area
 Subdivided vertically into three main parts:
 
-- L0[2].L1[0]: Title section
+- L0[2].L1[0]: Title section, with labels name '主题'
 - L0[2].L1[1]: Main content section
-  - L0[2].L1[1].L2[0]: Keywords section
+  - L0[2].L1[1].L2[0]: Keywords section, with labels name '关键词'
   - L0[2].L1[1].L2[1]: Notes section
-- L0[2].L1[2]: Summary section
+- L0[2].L1[2]: Summary section, with labels name '总结'
 
 ### L0[3] - Footer Area
 Subdivided into spaced elements:

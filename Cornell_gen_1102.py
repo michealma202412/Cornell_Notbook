@@ -248,58 +248,45 @@ class ComponentRenderer:
 
     def draw_footer(self, x, y, width, height, config):
         """
-        Draw the footer area (L0[3]) with review boxes (L1[0-5])
+        Draw the footer area (L0[3])
         """
         self.canvas.setStrokeColor(black)
         self.canvas.rect(x, y, width, height, stroke=1, fill=0)
         self.canvas.setFont(self.font, 12)
         
         review_boxes = config.get("review_boxes", [])
-        cursor_x = x + config.get("review_label_left_margin", 5)
-        cursor_x += config.get("review_text_right_spacing", 40)
-        
-        remaining_space = width - (cursor_x - x)
         if len(review_boxes) > 0:
-            box_config_width = config.get("review_box_width", 15)
-            if box_config_width == "auto":
-                total_config_width = 0
-            else:
-                total_config_width = box_config_width * len(review_boxes)
-                remaining_space -= total_config_width
-            if len(review_boxes) > 1:
-                uniform_spacing = remaining_space / (len(review_boxes) - 1)
-            else:
-                uniform_spacing = config.get("review_box_spacing", 10)
-        else:
-            uniform_spacing = config.get("review_box_spacing", 10)
-        
-        for i, label in enumerate(review_boxes):
-            box_w = config.get("review_box_width", 15)
-            box_height = config.get("review_box_height", 5)
-            box_top_margin = config.get("review_box_top_margin", 10)
-            text_padding = config.get("review_box_text_padding", 2)
+            # Calculate available space for boxes (total width minus margins)
+            available_space = width - 10  # 10 for some right padding
+            box_width = available_space / len(review_boxes)
             
-            text_width = self.canvas.stringWidth(label, self.font, 12)
-            text_height = 12
+            # Position boxes from the left edge
+            cursor_x = x + 5  # 5 for small spacing from left edge
             
-            if box_w == "auto":
-                box_w = max(15, text_width + 2 * text_padding)
-            else:
-                box_w = max(box_w, text_width + 2 * text_padding)
-            box_height = max(box_height, text_height + 2 * text_padding)
+            for i, label in enumerate(review_boxes):
+                box_height = config.get("review_box_height", 5)
+                box_top_margin = config.get("review_box_top_margin", 10)
+                text_padding = config.get("review_box_text_padding", 2)
                 
-            box_y = y + box_top_margin
-            
-            box_config = {
-                "text_padding": text_padding,
-                "vertical_padding": text_padding
-            }
-            text_alignment = config.get("review_text_alignment", "center")
-            self.draw_text_box(cursor_x, box_y, box_w, box_height, label, box_config, 
-                              alignment=text_alignment, vertical_alignment="middle")
-            
-            spacing = uniform_spacing if len(review_boxes) > 1 else config.get("review_box_spacing", 10)
-            cursor_x += box_w + spacing
+                text_width = self.canvas.stringWidth(label, self.font, 12)
+                text_height = 12
+                
+                # Ensure box is wide enough for text
+                box_w = max(box_width, text_width + 2 * text_padding)
+                box_height = max(box_height, text_height + 2 * text_padding)
+                    
+                box_y = y + box_top_margin
+                
+                box_config = {
+                    "text_padding": text_padding,
+                    "vertical_padding": text_padding
+                }
+                text_alignment = config.get("review_text_alignment", "center")
+                self.draw_text_box(cursor_x, box_y, box_w, box_height, label, box_config, 
+                                  alignment=text_alignment, vertical_alignment="middle")
+                
+                # Move cursor to next position (boxes tightly packed)
+                cursor_x += box_w
 
     def draw_cornell_module(self, x, y, width, height, config):
         """
@@ -326,10 +313,26 @@ class ComponentRenderer:
         self.canvas.line(x, y - theme_h, x + width, y - theme_h)  # Title bottom
         self.canvas.line(x, y - height + summary_h, x + width, y - height + summary_h)  # Summary top
         self.canvas.line(x + keyword_w, y - theme_h, x + keyword_w, y - height + summary_h)  # Keywords right
+
+        # Draw section labels
+        # Title section label
+        title_label = config.get("title_label", "主题")
+        title_label_x = x + 2  # Small padding from left
+        title_label_y = y - theme_h + 4  # Small padding from bottom
+        self.canvas.drawString(title_label_x, title_label_y, title_label)
         
-        # Divide summary area into two rows
+        # Keywords section label
+        keyword_label = config.get("keyword_label", "关键词")
+        keyword_label_x = x + 2  # Small padding from left
+        keyword_label_y = y - theme_h - 16  # Position within keywords section
+        self.canvas.drawString(keyword_label_x, keyword_label_y, keyword_label)
+        
+        # Summary section label
+        summary_label = config.get("summary_label", "总结")
+        summary_label_x = x + 2  # Small padding from left
         summary_mid_y = y - height + summary_h/2
-        self.canvas.line(x, summary_mid_y, x + width, summary_mid_y)
+        summary_label_y = summary_mid_y + 2  # Small padding from bottom of upper summary section
+        self.canvas.drawString(summary_label_x, summary_label_y, summary_label)
 
         # Draw grid lines based on configuration
         grid_renderer = GridRenderer()
