@@ -84,13 +84,13 @@ Different areas can support various grid line styles:
 
 For grid-based areas (`four_line_three_grid`, `english_grid`, `tianzige`), the following configuration parameters can be specified:
 
-- `grid_line_spacing`: Distance between grid lines (default varies by grid type)
+- `grid_line_spacing_mm`: Distance between grid lines (default varies by grid type)
 - `grid_cell_size`: Size of each grid cell (applies to tianzige)
 - `grid_line_style`: Style of lines (solid, dashed, dotted)
 - `grid_line_color`: Color of the grid lines
 - `grid_secondary_line_color`: Color of secondary/supporting lines (e.g., middle lines)
-- `grid_offset_x`: Horizontal offset from the area border
-- `grid_offset_y`: Vertical offset from the area border
+- `grid_offset_x_mm`: Horizontal offset from the area border
+- `grid_offset_y_mm`: Vertical offset from the area border
 
 ## Dynamic Sizing
 
