@@ -209,6 +209,10 @@ class ComponentRenderer:
         cursor_x = x + margin
         fields = config.get("fields", [])
         
+        # Draw header border only if enabled
+        if config.get("border_enabled", True):
+            self.canvas.rect(x, y, width, height, stroke=1, fill=0)
+        
         if fields:
             field_spacing = config.get("field_spacing", 5)
             total_field_width = width - 2 * margin - (len(fields) - 1) * field_spacing
@@ -232,7 +236,8 @@ class ComponentRenderer:
             
             field_config = {
                 "text_padding": text_padding,
-                "vertical_padding": vertical_padding
+                "vertical_padding": vertical_padding,
+                "border_enabled": field.get("border_enabled", True)  # Use field-specific border setting
             }
             self.draw_text_box(cursor_x, box_y, field_width, field_height, text, field_config, 
                               alignment=text_alignment, vertical_alignment=vertical_alignment)
@@ -256,27 +261,35 @@ class ComponentRenderer:
         quote_text_width = self.canvas.stringWidth(quote_text, self.font, 12)
         quote_text_height = 12
         
-        quote_box_height = max(quote["height"], quote_text_height + 2 * quote_vertical_padding)
+        # Use the height from the config parameter (which is the quote area height)
+        # rather than trying to access a non-existent quote["height"]
+        quote_box_height = max(height, quote_text_height + 2 * quote_vertical_padding)
+        
+        # Draw quote box border only if enabled
+        if config.get("border_enabled", True):
+            self.canvas.rect(x, y, width, quote_box_height, stroke=1, fill=0)
         
         quote_config = {
             "text_padding": quote_label_padding,
             "vertical_padding": quote_vertical_padding
         }
         self.draw_text_box(x, y, width, quote_box_height, quote_text, quote_config, 
-                          alignment="left", vertical_alignment="middle")
+                          alignment="left", vertical_alignment="top")
 
     def draw_footer(self, x, y, width, height, config):
         """
         Draw the footer area (L0[3]) with review boxes (L1[0-5])
         """
-        self.canvas.setStrokeColor(black)
-        self.canvas.rect(x, y, width, height, stroke=1, fill=0)
+        # Draw footer border only if enabled
+        if config.get("border_enabled", True):
+            self.canvas.setStrokeColor(black)
+            self.canvas.rect(x, y, width, height, stroke=1, fill=0)
         self.canvas.setFont(self.font, 12)
         
         review_boxes = config.get("review_boxes", [])
         if len(review_boxes) > 0:
             # Calculate available space for boxes (total width minus margins)
-            available_space = width #- 10  # 10 for some right padding
+            available_space = width - 20  # 20 for some right padding
             box_width = available_space / len(review_boxes)
             
             # Position boxes from the left edge
@@ -298,7 +311,8 @@ class ComponentRenderer:
                 
                 box_config = {
                     "text_padding": text_padding,
-                    "vertical_padding": text_padding
+                    "vertical_padding": text_padding,
+                    "border_enabled": False  # Disable border for footer text boxes
                 }
                 text_alignment = config.get("review_text_alignment", "center")
                 self.draw_text_box(cursor_x, box_y, box_w, box_height, label, box_config, 
@@ -325,33 +339,53 @@ class ComponentRenderer:
         keyword_w = width * keyword_width_ratio
         line_style = config.get("line_style", "single_line")
 
-        # Draw outer border
-        self.canvas.setStrokeColor(black)
-        self.canvas.rect(x, y - height, width, height, stroke=1, fill=0)
+        # Draw outer border only if enabled
+        if config.get("border_enabled", True):
+            self.canvas.setStrokeColor(black)
+            self.canvas.rect(x, y - height, width, height, stroke=1, fill=0)
 
-        # Draw internal dividing lines
-        self.canvas.line(x, y - theme_h, x + width, y - theme_h)  # Title bottom
-        self.canvas.line(x, y - height + summary_h, x + width, y - height + summary_h)  # Summary top
-        self.canvas.line(x + keyword_w, y - theme_h, x + keyword_w, y - height + summary_h)  # Keywords right
+        # 获取网格偏移量
+        grid_offset_y = config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
+
+        # Draw internal dividing lines - 确保与行格线对齐
+        # 标题区底部线：从标题区底部开始，向下偏移 grid_offset_y
+        self.canvas.line(x, y - theme_h + grid_offset_y, x + width, y - theme_h + grid_offset_y)  # Title bottom
+        
+        # 总结区顶部线：从总结区顶部开始，向上偏移 grid_offset_y
+        self.canvas.line(x, y - height + summary_h - grid_offset_y, x + width, y - height + summary_h - grid_offset_y)  # Summary top
+        
+        # 关键词区右侧线：从关键词区右侧开始，垂直方向对齐
+        self.canvas.line(x + keyword_w, y - theme_h + grid_offset_y, x + keyword_w, y - height + summary_h - grid_offset_y)  # Keywords right
 
         # Draw section labels
         # Title section label
         title_label = config.get("title_label", "主题")
-        title_label_x = x + 2  # Small padding from left
-        title_label_y = y - theme_h + 4  # Small padding from bottom
+        label_padding = config.get("label_padding", 2)  # 新增配置项
+        title_label_x = x + label_padding
+        
+        # 调整标题标签的Y坐标，使其与第一行格线对齐并居中
+        theme_offset_y = config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
+        # 将硬编码的 "- 6" 替换为可配置的 label_vertical_adjustment 参数
+        label_vertical_adjustment = config.get("label_vertical_adjustment", 6)
+        title_label_y = y - theme_h + theme_offset_y + (theme_h - theme_offset_y) / 2 - label_vertical_adjustment  # 居中对齐
         self.canvas.drawString(title_label_x, title_label_y, title_label)
         
         # Keywords section label
         keyword_label = config.get("keyword_label", "关键词")
-        keyword_label_x = x + 2  # Small padding from left
-        keyword_label_y = y - theme_h - 16  # Position within keywords section
+        keyword_label_x = x + label_padding
+        
+        # 调整关键词标签的Y坐标，使其与第一行格线对齐并居中
+        kw_offset_y = theme_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
+        keyword_label_y = y - theme_h - kw_offset_y + (height - kw_offset_y - theme_h) / 2 - label_vertical_adjustment  # 居中对齐
         self.canvas.drawString(keyword_label_x, keyword_label_y, keyword_label)
         
         # Summary section label
         summary_label = config.get("summary_label", "总结")
-        summary_label_x = x + 2  # Small padding from left
+        summary_label_x = x + label_padding
         summary_mid_y = y - height + summary_h/2
-        summary_label_y = summary_mid_y + 2  # Small padding from bottom of upper summary section
+        # 修改：将标签Y坐标调整为居中对齐，避免压到行格线
+        text_height = config.get("label_font_size", 12)  # 使用可配置的字体大小而不是硬编码的12
+        summary_label_y = summary_mid_y + text_height
         self.canvas.drawString(summary_label_x, summary_label_y, summary_label)
 
         # Draw grid lines based on configuration
@@ -594,6 +628,11 @@ def generate_notebook(config_path):
     page_cfg = cfg.get("page", {})
     margin = page_cfg.get("margin", 20)
     orientation = page_cfg.get("orientation", "portrait")
+    
+    # Add configurable binding margin
+    binding_margin = page_cfg.get("binding_margin", 0)
+    horizontal_margin = page_cfg.get("horizontal_margin", margin)
+    vertical_margin = page_cfg.get("vertical_margin", margin)
 
     if orientation == "landscape":
         W, H = landscape(A4)
@@ -605,34 +644,50 @@ def generate_notebook(config_path):
     header_cfg = cfg.get("header", {})
     footer_cfg = cfg.get("footer", {})
     modules = cfg.get("modules", [])
+    # Get quote configuration separately
+    quote_cfg = cfg.get("quote", {})
 
     header_h = header_cfg.get("height", 30)
     footer_h = footer_cfg.get("height", 20)
-    quote_box = header_cfg.get("quote_box", None)
-    quote_h = quote_box["height"] if quote_box else 0
-    usable_h = H - margin * 2 - header_h - quote_h - footer_h
+    # Get quote height from quote config in mm and convert to points
+    quote_h_mm = quote_cfg.get("height_mm", 14) if quote_cfg else 14
+    quote_h = quote_h_mm * MM_TO_POINTS
+    usable_h = H - vertical_margin * 2 - header_h - quote_h - footer_h
 
     renderer = ComponentRenderer(c, CHINESE_FONT)
     
-    # Draw header (L0[0])
-    renderer.draw_header(margin, H - margin, W - 2 * margin, header_h, header_cfg)
+    # Adjust margins with binding margin consideration
+    # For binding, we add extra margin to both sides to allow for proper hole punching/clipboarding
+    # Support for individual binding margins
+    left_binding_margin = page_cfg.get("left_binding_margin", binding_margin)
+    right_binding_margin = page_cfg.get("right_binding_margin", binding_margin)
+    top_binding_margin = page_cfg.get("top_binding_margin", 0)
+    bottom_binding_margin = page_cfg.get("bottom_binding_margin", 0)
     
-    # Draw quote area (L0[1])
-    if quote_box:
-        quote_y = H - margin - header_h - quote_h
-        renderer.draw_quote_box(margin, quote_y, W - 2 * margin, quote_h, header_cfg)
+    left_margin = horizontal_margin + left_binding_margin
+    right_margin = horizontal_margin + right_binding_margin
+    top_margin = vertical_margin + top_binding_margin
+    bottom_margin = vertical_margin + bottom_binding_margin
+    
+    # Draw header (L0[0])
+    renderer.draw_header(left_margin, H - top_margin, W - left_margin - right_margin, header_h, header_cfg)
+    
+    # Draw quote area (L0[1]) - now handled separately from header
+    if quote_cfg:
+        quote_y = H - top_margin - header_h - quote_h
+        renderer.draw_quote_box(left_margin, quote_y, W - left_margin - right_margin, quote_h, quote_cfg)
 
     # Draw Cornell modules (L0[2])
     if modules:
         module_spacing = cfg.get("module_spacing", 5)
         module_h = usable_h / len(modules) - module_spacing
-        y = H - margin - header_h - quote_h - module_spacing
+        y = H - top_margin - header_h - quote_h - module_spacing
         for m in modules:
-            renderer.draw_cornell_module(margin, y, W - 2 * margin, module_h, m)
+            renderer.draw_cornell_module(left_margin, y, W - left_margin - right_margin, module_h, m)
             y -= module_h + module_spacing
 
     # Draw footer (L0[3])
-    renderer.draw_footer(margin, margin, W - 2 * margin, footer_h, footer_cfg)
+    renderer.draw_footer(left_margin, bottom_margin, W - left_margin - right_margin, footer_h, footer_cfg)
 
     c.showPage()
     c.save()
