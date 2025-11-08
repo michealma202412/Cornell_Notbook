@@ -47,7 +47,7 @@
   "quote": {
     "height_mm": 28,
     "quote_box": {
-      "label": "箴言",
+      "label": "引文",
       "border_enabled": false,
       "vertical_padding": 3
     }

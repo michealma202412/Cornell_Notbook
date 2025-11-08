@@ -344,19 +344,6 @@ class ComponentRenderer:
             self.canvas.setStrokeColor(black)
             self.canvas.rect(x, y - height, width, height, stroke=1, fill=0)
 
-        # 获取网格偏移量
-        grid_offset_y = config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
-
-        # Draw internal dividing lines - 确保与行格线对齐
-        # 标题区底部线：从标题区底部开始，向下偏移 grid_offset_y
-        self.canvas.line(x, y - theme_h + grid_offset_y, x + width, y - theme_h + grid_offset_y)  # Title bottom
-        
-        # 总结区顶部线：从总结区顶部开始，向上偏移 grid_offset_y
-        self.canvas.line(x, y - height + summary_h - grid_offset_y, x + width, y - height + summary_h - grid_offset_y)  # Summary top
-        
-        # 关键词区右侧线：从关键词区右侧开始，垂直方向对齐
-        self.canvas.line(x + keyword_w, y - theme_h + grid_offset_y, x + keyword_w, y - height + summary_h - grid_offset_y)  # Keywords right
-
         # Draw section labels
         # Title section label
         title_label = config.get("title_label", "主题")
@@ -366,7 +353,7 @@ class ComponentRenderer:
         # 调整标题标签的Y坐标，使其与第一行格线对齐并居中
         theme_offset_y = config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
         # 将硬编码的 "- 6" 替换为可配置的 label_vertical_adjustment 参数
-        label_vertical_adjustment = config.get("label_vertical_adjustment", 6)
+        label_vertical_adjustment = config.get("label_vertical_adjustment", 0)
         title_label_y = y - theme_h + theme_offset_y + (theme_h - theme_offset_y) / 2 - label_vertical_adjustment  # 居中对齐
         self.canvas.drawString(title_label_x, title_label_y, title_label)
         
@@ -407,6 +394,22 @@ class ComponentRenderer:
             self._draw_tianzige_grid_layout(grid_renderer, x, y, width, height, 
                                           theme_h, summary_h, keyword_w, config)
         # blank layout requires no grid drawing
+
+        # 获取网格偏移量
+        grid_offset_y = config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
+
+        # 设置分割线颜色为黑色
+        self.canvas.setStrokeColor(black)
+
+        # Draw internal dividing lines - 确保与行格线对齐
+        # 标题区底部线：从标题区底部开始，向下偏移 grid_offset_y
+        self.canvas.line(x, y - theme_h + grid_offset_y, x + width, y - theme_h + grid_offset_y)  # Title bottom
+        
+        # 总结区顶部线：从总结区顶部开始，向上偏移 grid_offset_y
+        self.canvas.line(x, y - height + summary_h - grid_offset_y, x + width, y - height + summary_h - grid_offset_y)  # Summary top
+        
+        # 关键词区右侧线：从关键词区右侧开始，垂直方向对齐
+        self.canvas.line(x + keyword_w, y - theme_h + grid_offset_y, x + keyword_w, y - height + summary_h - grid_offset_y)  # Keywords right
 
     def _draw_four_line_three_grid_layout(self, grid_renderer, x, y, width, height, 
                                         theme_h, summary_h, keyword_w, config):
