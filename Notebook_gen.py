@@ -122,46 +122,46 @@ class NotebookGenerator:
 
     def draw_header(self, w, h):
         c = self.c
-        margin = self.cfg["margins"]
+        base_margin = self.cfg["margins"]
         header_h = mm_to_pt(self.cfg["header_height"])
         c.setFont("Helvetica-Bold", 10)
-        c.rect(margin["left"], h - margin["top"] - header_h, w - margin["left"] - margin["right"], header_h, stroke=1)
-        c.drawString(margin["left"] + 10, h - margin["top"] - header_h + 4, "日期: ______  天气: ______  名言: ___________________________")
+        c.rect(base_margin["left"], h - base_margin["top"] - header_h, w - base_margin["left"] - base_margin["right"], header_h, stroke=1)
+        c.drawString(base_margin["left"] + 10, h - base_margin["top"] - header_h + 4, "日期: ______  天气: ______  名言: ___________________________")
 
     def draw_footer(self, w):
         c = self.c
-        margin = self.cfg["margins"]
+        base_margin = self.cfg["margins"]
         footer_h = mm_to_pt(self.cfg["footer_height"])
         c.setFont("Helvetica", 8)
-        c.rect(margin["left"], margin["bottom"], w - margin["left"] - margin["right"], footer_h, stroke=1)
-        c.drawString(margin["left"] + 10, margin["bottom"] + 2, "备注区 / Footer Info")
+        c.rect(base_margin["left"], base_margin["bottom"], w - base_margin["left"] - base_margin["right"], footer_h, stroke=1)
+        c.drawString(base_margin["left"] + 10, base_margin["bottom"] + 2, "备注区 / Footer Info")
 
     def draw_body(self, w, h):
-        margin = self.cfg["margins"]
-        top_y = h - margin["top"] - mm_to_pt(self.cfg["header_height"])
-        bot_y = margin["bottom"] + mm_to_pt(self.cfg["footer_height"])
+        base_margin = self.cfg["margins"]
+        top_y = h - base_margin["top"] - mm_to_pt(self.cfg["header_height"])
+        bot_y = base_margin["bottom"] + mm_to_pt(self.cfg["footer_height"])
         usable_h = top_y - bot_y
-        usable_w = w - margin["left"] - margin["right"]
+        usable_w = w - base_margin["left"] - base_margin["right"]
 
         if self.cfg["template"] == "cornell":
             cornell = CornellRenderer(self.c, self.cfg, self.grid)
-            cornell.render(margin["left"], bot_y, usable_w, usable_h)
+            cornell.render(base_margin["left"], bot_y, usable_w, usable_h)
 
         elif self.cfg["template"] == "fourline":
             rows = int(usable_h / g_to_pt(3, self.grid_unit_mm))
-            self.grid.draw_four_line_three_grid(margin["left"], bot_y, usable_w, usable_h, rows)
+            self.grid.draw_four_line_three_grid(base_margin["left"], bot_y, usable_w, usable_h, rows)
 
         elif self.cfg["template"] == "tianzige":
-            self.grid.draw_tianzige(margin["left"], bot_y, usable_w, usable_h, 10, 8)
+            self.grid.draw_tianzige(base_margin["left"], bot_y, usable_w, usable_h, 10, 8)
 
         elif self.cfg["template"] == "dotgrid":
-            self.grid.draw_dotgrid(margin["left"], bot_y, usable_w, usable_h, 40, 30)
+            self.grid.draw_dotgrid(base_margin["left"], bot_y, usable_w, usable_h, 40, 30)
 
         elif self.cfg["template"] == "lined":
             rows = int(usable_h / g_to_pt(3, self.grid_unit_mm))
             for i in range(rows):
                 y = bot_y + i * g_to_pt(3, self.grid_unit_mm)
-                self.c.line(margin["left"], y, margin["left"] + usable_w, y)
+                self.c.line(base_margin["left"], y, base_margin["left"] + usable_w, y)
 
     def generate(self):
         w, h = self.page_size

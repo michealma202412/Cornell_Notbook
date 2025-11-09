@@ -3,7 +3,7 @@
   "page": {
     "size": "A4",
     "orientation": "portrait",
-    "margin": 10
+    "base_margin": 10
   },
   "header": {
     "height": 30,
