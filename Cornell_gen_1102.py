@@ -143,7 +143,7 @@ class GridRenderer:
                 c.line(cell_x + cell_size/2, cell_y - cell_size, cell_x + cell_size/2, cell_y)
 
     @staticmethod
-    def draw_single_line_grid(c, x, y, width, height, line_step_mm):
+    def draw_single_line_grid(c, x, y, width, height, line_step):
         """
         Draw single horizontal lines for regular note-taking
         """
@@ -151,7 +151,7 @@ class GridRenderer:
         while yy > y - height:
             c.setStrokeColor(lightgrey)
             c.line(x, yy, x + width, yy)
-            yy -= line_step_mm
+            yy -= line_step
 
 
 class ComponentRenderer:
@@ -334,7 +334,9 @@ class ComponentRenderer:
         self.canvas.setFont(self.font, 12)
         
         # Convert mm values to points
+        step = config.get("line_step_mm") * MM_TO_POINTS
         theme_h = config.get("theme_height_mm", 0) * MM_TO_POINTS
+        theme_h = theme_h + height % step
         summary_h = config.get("summary_height_mm", 0) * MM_TO_POINTS
         keyword_width_ratio = config.get("keyword_width_ratio", 0.3)
         keyword_w = width * keyword_width_ratio
@@ -347,34 +349,30 @@ class ComponentRenderer:
 
         # Draw section labels
         # Title section label
-        title_label = config.get("title_label", "主题")
-        label_padding = config.get("label_padding", 0)  # 新增配置项
-        title_label_x = x + label_padding
-        
-        # 调整标题标签的Y坐标，使其与第一行格线对齐并居中
-        theme_offset_y = config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
-        # 将硬编码的 "- 6" 替换为可配置的 label_vertical_adjustment 参数
-        label_vertical_adjustment = config.get("label_vertical_adjustment", 0)
-        title_label_y = y - theme_h + theme_offset_y + (theme_h - theme_offset_y) / 4 - label_vertical_adjustment  # 居中对齐
-        self.canvas.drawString(title_label_x, title_label_y, title_label)
+        if theme_h > 0:
+            title_label = config.get("title_label", "主题")
+            label_padding = config.get("label_padding", 0)  # 新增配置项
+            title_label_x = x + label_padding
+            
+            # 调整标题标签的Y坐标，使其与第一行格线对齐并居中
+            title_label_y = y - theme_h + (theme_h) / 4  # 居中对齐
+            self.canvas.drawString(title_label_x, title_label_y, title_label)
         
         # Keywords section label
         keyword_label = config.get("keyword_label", "关键词")
         keyword_label_x = x + label_padding
         
-        # 调整关键词标签的Y坐标，使其与第一行格线对齐并居中
-        kw_offset_y = theme_h + config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
-        keyword_label_y = y - theme_h - kw_offset_y + (height - kw_offset_y - theme_h) / 2 - label_vertical_adjustment  # 居中对齐
-        self.canvas.drawString(keyword_label_x, keyword_label_y, keyword_label)
+        # 调整关键词标签的Y坐标，使其与第一行格线对齐
+        keyword_label_y = y - theme_h - step + step / 4
+        if theme_h > 0:
+            self.canvas.drawString(keyword_label_x, keyword_label_y, keyword_label)
         
         # Summary section label
-        summary_label = config.get("summary_label", "总结")
-        summary_label_x = x + label_padding
-        summary_mid_y = y - height + summary_h/2
-        # 修改：将标签Y坐标调整为居中对齐，避免压到行格线
-        text_height = config.get("label_font_size", 12)  # 使用可配置的字体大小而不是硬编码的12
-        summary_label_y = summary_mid_y + text_height/4
-        self.canvas.drawString(summary_label_x, summary_label_y, summary_label)
+        if summary_h > 0:
+            summary_label = config.get("summary_label", "总结")
+            summary_label_x = x + label_padding
+            summary_label_y = y - height + summary_h - step + step / 4
+            self.canvas.drawString(summary_label_x, summary_label_y, summary_label)
 
         # Draw grid lines based on configuration
         grid_renderer = GridRenderer()
@@ -396,21 +394,20 @@ class ComponentRenderer:
                                           theme_h, summary_h, keyword_w, config)
         # blank layout requires no grid drawing
 
-        # 获取网格偏移量
-        grid_offset_y = config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
-
         # 设置分割线颜色为黑色
         self.canvas.setStrokeColor(black)
 
         # Draw internal dividing lines - 确保与行格线对齐
-        # 标题区底部线：从标题区底部开始，向下偏移 grid_offset_y
-        self.canvas.line(x, y - theme_h + grid_offset_y, x + width, y - theme_h + grid_offset_y)  # Title bottom
+        # 标题区底部线：从标题区底部开始
+        if theme_h > 0:
+            self.canvas.line(x, y - theme_h, x + width, y - theme_h)  # Title bottom
         
-        # 总结区顶部线：从总结区顶部开始，向上偏移 grid_offset_y
-        self.canvas.line(x, y - height + summary_h - grid_offset_y, x + width, y - height + summary_h - grid_offset_y)  # Summary top
+        # 总结区顶部线：从总结区顶部开始
+        if summary_h > 0:
+            self.canvas.line(x, y - height + summary_h, x + width, y - height + summary_h)  # Summary top
         
         # 关键词区右侧线：从关键词区右侧开始，垂直方向对齐
-        self.canvas.line(x + keyword_w, y - theme_h + grid_offset_y, x + keyword_w, y - height + summary_h - grid_offset_y)  # Keywords right
+        self.canvas.line(x + keyword_w, y - theme_h, x + keyword_w, y - height + summary_h)  # Keywords right
 
     def _draw_four_line_three_grid_layout(self, grid_renderer, x, y, width, height, 
                                         theme_h, summary_h, keyword_w, config):
@@ -422,43 +419,33 @@ class ComponentRenderer:
         row_heights = [h * MM_TO_POINTS for h in config.get("grid_row_heights_mm", [4, 6, 4])]
         
         # Notes area
-        offset_x = keyword_w + config.get("grid_offset_x_mm", 0) * MM_TO_POINTS
-        offset_y = theme_h + config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
-        width_reduction = keyword_w + config.get("grid_width_reduction_mm", 0) * MM_TO_POINTS
-        height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 0) * MM_TO_POINTS
-        
         grid_renderer.draw_four_line_three_grid(
-            self.canvas, x + offset_x, y - offset_y, 
-            width - width_reduction, height - height_reduction, 
+            self.canvas, x + keyword_w, y - theme_h,
+            width - keyword_w, height - theme_h - summary_h, 
             line_spacing, row_heights)
         
         # Keywords area
-        kw_offset_y = theme_h + config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
-        kw_height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 0) * MM_TO_POINTS
         grid_renderer.draw_four_line_three_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 0) * MM_TO_POINTS, y - kw_offset_y, 
-            keyword_w - config.get("grid_offset_x_mm", 0) * MM_TO_POINTS * 2, 
-            height - kw_height_reduction, line_spacing, row_heights)
+            self.canvas, x, y - theme_h,
+            keyword_w,
+            height - theme_h - summary_h, line_spacing, row_heights)
         
         # Summary area (two rows)
-        sum_offset_y = height - summary_h + config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
         grid_renderer.draw_four_line_three_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 0) * MM_TO_POINTS, y - sum_offset_y, 
-            width - config.get("grid_offset_x_mm", 0) * MM_TO_POINTS * 2, 
-            summary_h/2 - config.get("grid_offset_y_mm", 0) * MM_TO_POINTS * 2, line_spacing, row_heights)
+            self.canvas, x, y - (height - summary_h),
+            width,
+            summary_h/2, line_spacing, row_heights)
         
-        sum_offset_y2 = height - summary_h/2 + config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
         grid_renderer.draw_four_line_three_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 0) * MM_TO_POINTS, y - sum_offset_y2, 
-            width - config.get("grid_offset_x_mm", 0) * MM_TO_POINTS * 2, 
-            summary_h/2 - config.get("grid_offset_y_mm", 0) * MM_TO_POINTS * 2, line_spacing, row_heights)
+            self.canvas, x, y - (height - summary_h/2),
+            width,
+            summary_h/2, line_spacing, row_heights)
         
         # Title area
-        theme_offset_y = theme_h - config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
         grid_renderer.draw_four_line_three_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 0) * MM_TO_POINTS, y - theme_offset_y,
-            width - config.get("grid_offset_x_mm", 0) * MM_TO_POINTS * 2,
-            theme_h - config.get("grid_offset_y_mm", 0) * MM_TO_POINTS * 2, line_spacing, row_heights)
+            self.canvas, x, y - theme_h,
+            width,
+            theme_h, line_spacing, row_heights)
 
     def _draw_single_line_layout(self, grid_renderer, x, y, width, height, 
                                theme_h, summary_h, keyword_w, config):
@@ -469,36 +456,27 @@ class ComponentRenderer:
         step = config.get("line_step_mm", 0) * MM_TO_POINTS
         
         # Notes area
-        offset_x = keyword_w + config.get("grid_offset_x_mm", 0) * MM_TO_POINTS
-        offset_y = theme_h + config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
-        width_reduction = keyword_w + config.get("grid_width_reduction_mm", 0) * MM_TO_POINTS
-        height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 0) * MM_TO_POINTS
-        
         grid_renderer.draw_single_line_grid(
-            self.canvas, x + offset_x, y - offset_y,
-            width - width_reduction, height - height_reduction, step)
+            self.canvas, x + keyword_w, y - theme_h,
+            width - keyword_w, height - theme_h - summary_h, step)
         
         # Keywords area
-        kw_offset_y = theme_h + config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
-        kw_height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 0) * MM_TO_POINTS
         grid_renderer.draw_single_line_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 0) * MM_TO_POINTS, y - kw_offset_y,
-            keyword_w - config.get("grid_offset_x_mm", 0) * MM_TO_POINTS * 2,
-            height - kw_height_reduction, step)
+            self.canvas, x, y - theme_h,
+            keyword_w,
+            height - theme_h - summary_h, step)
         
         # Summary area
-        sum_offset_y = height - summary_h + config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
         grid_renderer.draw_single_line_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 0) * MM_TO_POINTS, y - sum_offset_y,
-            width - config.get("grid_offset_x_mm", 0) * MM_TO_POINTS * 2,
-            summary_h - config.get("grid_offset_y_mm", 0) * MM_TO_POINTS * 2, step)
+            self.canvas, x, y - (height - summary_h),
+            width,
+            summary_h, step)
         
         # Title area
-        theme_offset_y = theme_h - config.get("grid_offset_y_mm", 0) * MM_TO_POINTS
         grid_renderer.draw_single_line_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 0) * MM_TO_POINTS, y - theme_offset_y,
-            width - config.get("grid_offset_x_mm", 0) * MM_TO_POINTS * 2,
-            theme_h - config.get("grid_offset_y_mm", 0) * MM_TO_POINTS * 2, step)
+            self.canvas, x, y - theme_h,
+            width,
+            theme_h, step)
 
     def _draw_dotted_grid_layout(self, grid_renderer, x, y, width, height, 
                                theme_h, summary_h, keyword_w, config):
@@ -509,36 +487,27 @@ class ComponentRenderer:
         dot_spacing = config.get("grid_dot_spacing_mm", 20) * MM_TO_POINTS
         
         # Notes area
-        offset_x = keyword_w + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS
-        offset_y = theme_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
-        width_reduction = keyword_w + config.get("grid_width_reduction_mm", 4) * MM_TO_POINTS
-        height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 6) * MM_TO_POINTS
-        
         grid_renderer.draw_dotted_grid(
-            self.canvas, x + offset_x, y - offset_y,
-            width - width_reduction, height - height_reduction, dot_spacing)
+            self.canvas, x + keyword_w, y - theme_h,
+            width - keyword_w, height - theme_h - summary_h, dot_spacing)
         
         # Keywords area
-        kw_offset_y = theme_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
-        kw_height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 6) * MM_TO_POINTS
         grid_renderer.draw_dotted_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS, y - kw_offset_y,
-            keyword_w - config.get("grid_offset_x_mm", 2) * MM_TO_POINTS * 2,
-            height - kw_height_reduction, dot_spacing)
+            self.canvas, x, y - theme_h,
+            keyword_w,
+            height - theme_h - summary_h, dot_spacing)
         
         # Summary area
-        sum_offset_y = height - summary_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
         grid_renderer.draw_dotted_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS, y - sum_offset_y,
-            width - config.get("grid_offset_x_mm", 2) * MM_TO_POINTS * 2,
-            summary_h - config.get("grid_offset_y_mm", 4) * MM_TO_POINTS * 2, dot_spacing)
+            self.canvas, x, y - (height - summary_h),
+            width,
+            summary_h, dot_spacing)
         
         # Title area
-        theme_offset_y = theme_h - config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
         grid_renderer.draw_dotted_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS, y - theme_offset_y,
-            width - config.get("grid_offset_x_mm", 2) * MM_TO_POINTS * 2,
-            theme_h - config.get("grid_offset_y_mm", 4) * MM_TO_POINTS * 2, dot_spacing)
+            self.canvas, x, y - theme_h,
+            width,
+            theme_h, dot_spacing)
 
     def _draw_english_grid_layout(self, grid_renderer, x, y, width, height, 
                                 theme_h, summary_h, keyword_w, config):
@@ -549,36 +518,27 @@ class ComponentRenderer:
         line_spacing = config.get("grid_line_spacing_mm", 8) * MM_TO_POINTS
         
         # Notes area
-        offset_x = keyword_w + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS
-        offset_y = theme_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
-        width_reduction = keyword_w + config.get("grid_width_reduction_mm", 4) * MM_TO_POINTS
-        height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 6) * MM_TO_POINTS
-        
         grid_renderer.draw_english_grid(
-            self.canvas, x + offset_x, y - offset_y,
-            width - width_reduction, height - height_reduction, line_spacing)
+            self.canvas, x + keyword_w, y - theme_h,
+            width - keyword_w, height - theme_h - summary_h, line_spacing)
         
         # Keywords area
-        kw_offset_y = theme_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
-        kw_height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 6) * MM_TO_POINTS
         grid_renderer.draw_english_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS, y - kw_offset_y,
-            keyword_w - config.get("grid_offset_x_mm", 2) * MM_TO_POINTS * 2,
-            height - kw_height_reduction, line_spacing)
+            self.canvas, x, y - theme_h,
+            keyword_w,
+            height - theme_h - summary_h, line_spacing)
         
         # Summary area
-        sum_offset_y = height - summary_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
         grid_renderer.draw_english_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS, y - sum_offset_y,
-            width - config.get("grid_offset_x_mm", 2) * MM_TO_POINTS * 2,
-            summary_h - config.get("grid_offset_y_mm", 4) * MM_TO_POINTS * 2, line_spacing)
+            self.canvas, x, y - (height - summary_h),
+            width,
+            summary_h, line_spacing)
         
         # Title area
-        theme_offset_y = theme_h - config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
         grid_renderer.draw_english_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS, y - theme_offset_y,
-            width - config.get("grid_offset_x_mm", 2) * MM_TO_POINTS * 2,
-            theme_h - config.get("grid_offset_y_mm", 4) * MM_TO_POINTS * 2, line_spacing)
+            self.canvas, x, y - theme_h,
+            width,
+            theme_h, line_spacing)
 
     def _draw_tianzige_grid_layout(self, grid_renderer, x, y, width, height, 
                                  theme_h, summary_h, keyword_w, config):
@@ -589,36 +549,27 @@ class ComponentRenderer:
         cell_size = config.get("grid_cell_size_mm", 30) * MM_TO_POINTS
         
         # Notes area
-        offset_x = keyword_w + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS
-        offset_y = theme_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
-        width_reduction = keyword_w + config.get("grid_width_reduction_mm", 4) * MM_TO_POINTS
-        height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 6) * MM_TO_POINTS
-        
         grid_renderer.draw_tianzige_grid(
-            self.canvas, x + offset_x, y - offset_y,
-            width - width_reduction, height - height_reduction, cell_size)
+            self.canvas, x + keyword_w, y - theme_h,
+            width - keyword_w, height - theme_h - summary_h, cell_size)
         
         # Keywords area
-        kw_offset_y = theme_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
-        kw_height_reduction = theme_h + summary_h + config.get("grid_height_reduction_mm", 6) * MM_TO_POINTS
         grid_renderer.draw_tianzige_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS, y - kw_offset_y,
-            keyword_w - config.get("grid_offset_x_mm", 2) * MM_TO_POINTS * 2,
-            height - kw_height_reduction, cell_size)
+            self.canvas, x, y - theme_h,
+            keyword_w,
+            height - theme_h - summary_h, cell_size)
         
         # Summary area
-        sum_offset_y = height - summary_h + config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
         grid_renderer.draw_tianzige_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS, y - sum_offset_y,
-            width - config.get("grid_offset_x_mm", 2) * MM_TO_POINTS * 2,
-            summary_h - config.get("grid_offset_y_mm", 4) * MM_TO_POINTS * 2, cell_size)
+            self.canvas, x, y - (height - summary_h),
+            width,
+            summary_h, cell_size)
         
         # Title area
-        theme_offset_y = theme_h - config.get("grid_offset_y_mm", 4) * MM_TO_POINTS
         grid_renderer.draw_tianzige_grid(
-            self.canvas, x + config.get("grid_offset_x_mm", 2) * MM_TO_POINTS, y - theme_offset_y,
-            width - config.get("grid_offset_x_mm", 2) * MM_TO_POINTS * 2,
-            theme_h - config.get("grid_offset_y_mm", 4) * MM_TO_POINTS * 2, cell_size)
+            self.canvas, x, y - theme_h,
+            width,
+            theme_h, cell_size)
 
 
 def generate_notebook(config_path):
@@ -648,7 +599,7 @@ def generate_notebook(config_path):
     header_h = header_cfg.get("height_mm", 0) * MM_TO_POINTS
     footer_h = footer_cfg.get("height_mm", 0) * MM_TO_POINTS
     # Get quote height from quote config in mm and convert to points
-    quote_h_mm = quote_cfg.get("height_mm", 14) if quote_cfg else 14
+    quote_h_mm = quote_cfg.get("height_mm", 0)
     quote_h = quote_h_mm * MM_TO_POINTS
 
     renderer = ComponentRenderer(c, CHINESE_FONT)
@@ -678,8 +629,7 @@ def generate_notebook(config_path):
 
     # Draw Cornell modules (L0[2])
     if modules:
-        module_spacing = cfg.get("module_spacing", 0)
-        module_h = (usable_h + module_spacing) / len(modules)
+        module_h = usable_h / len(modules)
         y = H - top_margin - header_h - quote_h
         for m in modules:
             renderer.draw_cornell_module(left_margin, y, W - left_margin - right_margin, module_h, m)

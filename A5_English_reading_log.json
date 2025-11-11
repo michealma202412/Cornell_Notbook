@@ -1,5 +1,5 @@
 {
-  "output": "Cornell_Notebook.pdf",
+  "output": "A5_English_reading_log.pdf",
   "page": {
     "size": "A5",
     "orientation": "portrait",
@@ -14,7 +14,7 @@
     "field_margin": 0,
     "field_vertical_padding": 0,
     "field_spacing": 0,
-    "border_enabled": true,
+    "border_enabled": false,
     "fields": [
       {
         "label": "日期",
@@ -22,7 +22,7 @@
         "text_padding": 0,
         "vertical_alignment": "top",
         "vertical_padding": 0,
-        "border_enabled": true,
+        "border_enabled": false,
         "width": "auto"
       },
       {
@@ -31,7 +31,7 @@
         "text_padding": 0,
         "vertical_alignment": "top",
         "vertical_padding": 0,
-        "border_enabled": true,
+        "border_enabled": false,
         "width": "auto"
       },
       {
@@ -40,7 +40,7 @@
         "text_padding": 0,
         "vertical_alignment": "top",
         "vertical_padding": 0,
-        "border_enabled": true,
+        "border_enabled": false,
         "width": "auto"
       }
     ]
@@ -49,7 +49,7 @@
     "height_mm": 9,
     "review_box_top_margin": 0,
     "review_box_text_padding": 0,
-    "border_enabled": true,
+    "border_enabled": false,
     "review_boxes": ["|D83:    .    .    ", "|D49:    .    .    ", "|D28:    .    .    ", "|D15:    .    .    ", "|D7:    .    .    ", "|D2:    .    .    "],
     "review_text_alignment": "left"
   },
@@ -57,67 +57,57 @@
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "summary_height_mm": 9,
+      "grid_row_heights_mm": [4, 6, 4],
       "keyword_width_ratio": 0.2,
-      "line_style": "single_line",
+      "line_style": "four_line_three_grid",
       "line_step_mm": 9,
       "label_padding": 0,
-      "border_enabled": true,
-      "title_label": "主题",
-      "keyword_label": "关键词",
-      "summary_label": "总结"
+      "border_enabled": false,
+      "title_label": "主题"
     },
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "summary_height_mm": 9,
+      "grid_row_heights_mm": [4, 6, 4],
       "keyword_width_ratio": 0.2,
-      "line_style": "single_line",
+      "line_style": "four_line_three_grid",
       "line_step_mm": 9,
       "label_padding": 0,
-      "border_enabled": true,
-      "title_label": "主题",
-      "keyword_label": "关键词",
-      "summary_label": "总结"
+      "border_enabled": false,
+      "title_label": "主题"
     },
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "summary_height_mm": 9,
+      "grid_row_heights_mm": [4, 6, 4],
       "keyword_width_ratio": 0.2,
-      "line_style": "single_line",
+      "line_style": "four_line_three_grid",
       "line_step_mm": 9,
       "label_padding": 0,
-      "border_enabled": true,
-      "title_label": "主题",
-      "keyword_label": "关键词",
-      "summary_label": "总结"
+      "border_enabled": false,
+      "title_label": "主题"
     },
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "summary_height_mm": 9,
+      "grid_row_heights_mm": [4, 6, 4],
       "keyword_width_ratio": 0.2,
-      "line_style": "single_line",
+      "line_style": "four_line_three_grid",
       "line_step_mm": 9,
       "label_padding": 0,
-      "border_enabled": true,
-      "title_label": "主题",
-      "keyword_label": "关键词",
-      "summary_label": "总结"
+      "border_enabled": false,
+      "title_label": "主题"
     },
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "summary_height_mm": 9,
+      "grid_row_heights_mm": [4, 6, 4],
       "keyword_width_ratio": 0.2,
-      "line_style": "single_line",
+      "line_style": "four_line_three_grid",
       "line_step_mm": 9,
       "label_padding": 0,
-      "border_enabled": true,
-      "title_label": "主题",
-      "keyword_label": "关键词",
-      "summary_label": "总结"
+      "border_enabled": false,
+      "title_label": "主题"
     }
   ]
 }
