@@ -7,7 +7,8 @@
     "left_binding_margin": 45,
     "right_binding_margin": 0,
     "top_binding_margin": 0,
-    "bottom_binding_margin": 0
+    "bottom_binding_margin": 0,
+    "line_step_mm": 9
   },
   "header": {
     "height_mm": 9,
@@ -57,7 +58,7 @@
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "grid_row_heights_mm": [4, 6, 4],
+      "grid_row_heights_mm": [3, 3, 3],
       "keyword_width_ratio": 0.2,
       "line_style": "four_line_three_grid",
       "line_step_mm": 9,
@@ -68,7 +69,7 @@
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "grid_row_heights_mm": [4, 6, 4],
+      "grid_row_heights_mm": [3, 3, 3],
       "keyword_width_ratio": 0.2,
       "line_style": "four_line_three_grid",
       "line_step_mm": 9,
@@ -79,7 +80,7 @@
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "grid_row_heights_mm": [4, 6, 4],
+      "grid_row_heights_mm": [3, 3, 3],
       "keyword_width_ratio": 0.2,
       "line_style": "four_line_three_grid",
       "line_step_mm": 9,
@@ -90,7 +91,7 @@
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "grid_row_heights_mm": [4, 6, 4],
+      "grid_row_heights_mm": [3, 3, 3],
       "keyword_width_ratio": 0.2,
       "line_style": "four_line_three_grid",
       "line_step_mm": 9,
@@ -101,7 +102,7 @@
     {
       "type": "cornell",
       "theme_height_mm": 9,
-      "grid_row_heights_mm": [4, 6, 4],
+      "grid_row_heights_mm": [3, 3, 3],
       "keyword_width_ratio": 0.2,
       "line_style": "four_line_three_grid",
       "line_step_mm": 9,

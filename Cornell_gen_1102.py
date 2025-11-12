@@ -1,7 +1,7 @@
 import json
 import sys
 from reportlab.lib.pagesizes import A4, landscape, portrait
-from reportlab.lib.colors import black, lightgrey, blue
+from reportlab.lib.colors import black, lightgrey, blue, lightblue
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -64,7 +64,7 @@ class GridRenderer:
         Draw four-line three-grid pattern (commonly used for Chinese pinyin)
         """
         if row_heights is None:
-            row_heights = [4, 6, 4]
+            row_heights = [3, 3, 3]
             
         # Calculate how many groups can be drawn
         total_row_height = sum(row_heights)
@@ -72,12 +72,12 @@ class GridRenderer:
         for i in range(n):
             base_y = y - i * total_row_height
             # Line 1 - light grey dashed line
-            c.setStrokeColor(black)
+            c.setStrokeColor(lightgrey)
             # c.setDash(1, 2)
             c.line(x, base_y, x + width, base_y)
             # Line 2 - blue dash line
-            c.setDash(1,2)
-            c.setStrokeColor(blue)
+            #c.setDash(1,2)
+            c.setStrokeColor(lightblue)
             c.line(x, base_y - row_heights[0], x + width, base_y - row_heights[0])
             # Line 3 - blue solid line
             c.line(x, base_y - row_heights[0] - row_heights[1], x + width, base_y - row_heights[0] - row_heights[1])
@@ -289,11 +289,11 @@ class ComponentRenderer:
         review_boxes = config.get("review_boxes", [])
         if len(review_boxes) > 0:
             # Calculate available space for boxes (total width minus margins)
-            available_space = width - 20  # 20 for some right padding
+            available_space = width
             box_width = available_space / len(review_boxes)
             
             # Position boxes from the left edge
-            cursor_x = x #+ 5  # 5 for small spacing from left edge
+            cursor_x = x
             
             for i, label in enumerate(review_boxes):
                 # 使用 footer 的 height 作为 review box 的高度
@@ -336,12 +336,12 @@ class ComponentRenderer:
         # Convert mm values to points
         step = config.get("line_step_mm") * MM_TO_POINTS
         theme_h = config.get("theme_height_mm", 0) * MM_TO_POINTS
-        theme_h = theme_h + height % step
+        theme_h = theme_h
         summary_h = config.get("summary_height_mm", 0) * MM_TO_POINTS
         keyword_width_ratio = config.get("keyword_width_ratio", 0.3)
         keyword_w = width * keyword_width_ratio
         line_style = config.get("line_style", "single_line")
-
+        label_padding = config.get("label_padding", 0)  # 新增配置项
         # Draw outer border only if enabled
         if config.get("border_enabled", True):
             self.canvas.setStrokeColor(black)
@@ -350,8 +350,7 @@ class ComponentRenderer:
         # Draw section labels
         # Title section label
         if theme_h > 0:
-            title_label = config.get("title_label", "主题")
-            label_padding = config.get("label_padding", 0)  # 新增配置项
+            title_label = config.get("title_label", "")
             title_label_x = x + label_padding
             
             # 调整标题标签的Y坐标，使其与第一行格线对齐并居中
@@ -359,7 +358,7 @@ class ComponentRenderer:
             self.canvas.drawString(title_label_x, title_label_y, title_label)
         
         # Keywords section label
-        keyword_label = config.get("keyword_label", "关键词")
+        keyword_label = config.get("keyword_label", "")
         keyword_label_x = x + label_padding
         
         # 调整关键词标签的Y坐标，使其与第一行格线对齐
@@ -416,7 +415,7 @@ class ComponentRenderer:
         """
         # Convert mm values to points
         line_spacing = config.get("grid_line_spacing_mm", 0) * MM_TO_POINTS
-        row_heights = [h * MM_TO_POINTS for h in config.get("grid_row_heights_mm", [4, 6, 4])]
+        row_heights = [h * MM_TO_POINTS for h in config.get("grid_row_heights_mm", [3, 3, 3])]
         
         # Notes area
         grid_renderer.draw_four_line_three_grid(
@@ -581,12 +580,13 @@ def generate_notebook(config_path):
 
     output = cfg.get("output", "notebook.pdf")
     page_cfg = cfg.get("page", {})
-
+    page_size_name = page_cfg.get("size", "A4")
+    page_size = PAPER_SIZES.get(page_size_name, A4) 
     orientation = page_cfg.get("orientation", "portrait")
     if orientation == "landscape":
-        W, H = landscape(A4)
+        W, H = landscape(page_size)
     else:
-        W, H = portrait(A4)
+        W, H = portrait(page_size)
 
     c = canvas.Canvas(output, pagesize=(W, H))
 
@@ -602,6 +602,7 @@ def generate_notebook(config_path):
     quote_h_mm = quote_cfg.get("height_mm", 0)
     quote_h = quote_h_mm * MM_TO_POINTS
 
+    step = page_cfg.get("line_step_mm", 9) * MM_TO_POINTS
     renderer = ComponentRenderer(c, CHINESE_FONT)
 
     # Adjust margins with binding margin consideration
@@ -629,7 +630,8 @@ def generate_notebook(config_path):
 
     # Draw Cornell modules (L0[2])
     if modules:
-        module_h = usable_h / len(modules)
+        Unused_space = usable_h - (usable_h // (step * len(modules))) * (step * len(modules))
+        module_h = (usable_h // (step * len(modules))) * step
         y = H - top_margin - header_h - quote_h
         for m in modules:
             renderer.draw_cornell_module(left_margin, y, W - left_margin - right_margin, module_h, m)

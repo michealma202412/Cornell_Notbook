@@ -3,7 +3,7 @@
   "page": {
     "size": "A4",
     "orientation": "portrait",
-    "base_margin": 10
+    "margin": 10
   },
   "header": {
     "height": 30,
@@ -12,7 +12,6 @@
     "field_spacing": 5,
     "label_padding": 2,
     "quote_label_padding": 5,
-    "border_enabled":false,
     "fields": [
       {
         "label": "日期",
@@ -31,7 +30,7 @@
         "width": "auto"
       },
       {
-        "label": "掌握程度",
+        "label": "复习标记",
         "text_alignment": "left",
         "text_padding": 5,
         "vertical_alignment": "top",
@@ -48,39 +47,35 @@
   "footer": {
     "height": 25,
     "review_box_height": 5,
-    "review_box_top_margin": 0,
+    "review_box_top_margin": 10,
     "review_box_text_padding": 2,
-    "border_enabled":false,
-    "review_boxes": ["|day83:    /    /    ", "|day49:    /    /    ", "|day28:    /    /    ", "|day15:    /    /    ", "|day7:    /    /    ", "|day2:    /    /    "],
-    "review_text_alignment": "left"
+    "review_boxes": ["第83天", "第49天", "第28天", "第15天", "第7天", "第2天"],
+    "review_text_alignment": "center"
   },
   "module_spacing": 5,
   "modules": [
     {
       "type": "cornell",
-      "theme_height_mm": 14,
-      "summary_height_mm": 28,
+      "theme_height": 30,
+      "summary_height": 30,
       "keyword_width_ratio": 0.3,
       "line_style": "",
-      "line_step_mm": 14,
-      "grid_offset_x_mm": 0,
-      "grid_offset_y_mm": 0,
-      "grid_width_reduction_mm": 0,
-      "grid_height_reduction_mm": 0,
-      "grid_line_spacing_mm": 0,
-      "border_enabled":false,
-      "grid_row_heights_mm": [4, 6, 4]
+      "grid_offset_x": 2,
+      "grid_offset_y": 4,
+      "grid_width_reduction": 4,
+      "grid_height_reduction": 6,
+      "grid_line_spacing": 6,
+      "grid_row_heights": [4, 6, 4]
     },
     {
       "type": "cornell",
-      "theme_height_mm": 12,
-      "summary_height_mm": 24,
+      "theme_height": 30,
+      "summary_height": 30,
       "keyword_width_ratio": 0.3,
       "line_style": "single_line",
-      "line_step_mm": 12,
-      "border_enabled":false,
-      "grid_offset_x_mm": 0,
-      "grid_offset_y_mm": 0
+      "line_step": 14,
+      "grid_offset_x": 2,
+      "grid_offset_y": 4
     }
   ]
 }
