@@ -154,22 +154,38 @@ class GridRenderer:
             yy -= line_step
 
 
-class ComponentRenderer:
+# Base class for all renderers
+class BaseRenderer:
     """
-    Handles rendering of different notebook components based on struct.md hierarchy
+    Abstract base class for all component renderers
     """
-    
     def __init__(self, canvas, font):
         self.canvas = canvas
         self.font = font
-        
-    def draw_text_box(self, x, y, width, height, text, config, alignment="left", vertical_alignment="top"):
+    
+    def draw(self, x, y, width, height, config):
         """
-        Draw a box with text, following dynamic sizing rules from struct.md
+        Abstract method to draw a component
+        Must be implemented by subclasses
+        """
+        raise NotImplementedError("Subclasses must implement draw method")
+
+
+class TextBoxRenderer(BaseRenderer):
+    """
+    Renderer for text boxes with various alignment options
+    """
+    def draw(self, x, y, width, height, config):
+        """
+        Draw a box with text, following dynamic sizing rules
         """
         # Draw box border
         if config.get("border_enabled", True):
             self.canvas.rect(x, y, width, height, stroke=1, fill=0)
+        
+        text = config.get("text", "")
+        alignment = config.get("alignment", "left")
+        vertical_alignment = config.get("vertical_alignment", "top")
         
         # Get text dimensions
         text_width = self.canvas.stringWidth(text, self.font, 12)
@@ -200,7 +216,12 @@ class ComponentRenderer:
         
         return width, height
 
-    def draw_header(self, x, y, width, height, config):
+
+class HeaderRenderer(BaseRenderer):
+    """
+    Renderer for the header area with fields
+    """
+    def draw(self, x, y, width, height, config):
         """
         Draw the header area (L0[0]) with fields (L1[0-n])
         """
@@ -235,17 +256,26 @@ class ComponentRenderer:
             box_y = y - field_height + config.get("field_vertical_padding", 0)
             
             field_config = {
+                "text": text,
                 "text_padding": text_padding,
                 "vertical_padding": vertical_padding,
-                "border_enabled": field.get("border_enabled", True)  # Use field-specific border setting
+                "border_enabled": field.get("border_enabled", True),
+                "alignment": text_alignment,
+                "vertical_alignment": vertical_alignment
             }
-            self.draw_text_box(cursor_x, box_y, field_width, field_height, text, field_config, 
-                              alignment=text_alignment, vertical_alignment=vertical_alignment)
+            
+            text_box_renderer = TextBoxRenderer(self.canvas, self.font)
+            text_box_renderer.draw(cursor_x, box_y, field_width, field_height, field_config)
             
             field_spacing = config.get("field_spacing", 0)
             cursor_x += field_width + field_spacing
 
-    def draw_quote_box(self, x, y, width, height, config):
+
+class QuoteBoxRenderer(BaseRenderer):
+    """
+    Renderer for the quote area
+    """
+    def draw(self, x, y, width, height, config):
         """
         Draw the quote area (L0[1]) with daily quote text (L1[0])
         """
@@ -270,13 +300,22 @@ class ComponentRenderer:
             self.canvas.rect(x, y, width, quote_box_height, stroke=1, fill=0)
         
         quote_config = {
+            "text": quote_text,
             "text_padding": quote_label_padding,
-            "vertical_padding": quote_vertical_padding
+            "vertical_padding": quote_vertical_padding,
+            "alignment": "left",
+            "vertical_alignment": "top"
         }
-        self.draw_text_box(x, y, width, quote_box_height, quote_text, quote_config, 
-                          alignment="left", vertical_alignment="top")
+        
+        text_box_renderer = TextBoxRenderer(self.canvas, self.font)
+        text_box_renderer.draw(x, y, width, quote_box_height, quote_config)
 
-    def draw_footer(self, x, y, width, height, config):
+
+class FooterRenderer(BaseRenderer):
+    """
+    Renderer for the footer area with review boxes
+    """
+    def draw(self, x, y, width, height, config):
         """
         Draw the footer area (L0[3]) with review boxes (L1[0-5])
         """
@@ -311,18 +350,26 @@ class ComponentRenderer:
                 box_y = y + box_top_margin
                 
                 box_config = {
+                    "text": label,
                     "text_padding": text_padding,
                     "vertical_padding": text_padding,
-                    "border_enabled": False  # Disable border for footer text boxes
+                    "border_enabled": False,
+                    "alignment": config.get("review_text_alignment", "center"),
+                    "vertical_alignment": "middle"
                 }
-                text_alignment = config.get("review_text_alignment", "center")
-                self.draw_text_box(cursor_x, box_y, box_w, box_height, label, box_config, 
-                                  alignment=text_alignment, vertical_alignment="middle")
+                
+                text_box_renderer = TextBoxRenderer(self.canvas, self.font)
+                text_box_renderer.draw(cursor_x, box_y, box_w, box_height, box_config)
                 
                 # Move cursor to next position (boxes tightly packed)
                 cursor_x += box_w
 
-    def draw_cornell_module(self, x, y, width, height, config):
+
+class CornellModuleRenderer(BaseRenderer):
+    """
+    Renderer for the Cornell note area with its subdivisions
+    """
+    def draw(self, x, y, width, height, config):
         """
         Draw the Cornell note area (L0[2]) with its subdivisions:
         - Title section (L1[0])
@@ -571,78 +618,89 @@ class ComponentRenderer:
             theme_h, cell_size)
 
 
-def generate_notebook(config_path):
+class NotebookGenerator:
     """
-    Generate Cornell notebook PDF based on configuration
+    Main API class for generating Cornell notebooks
     """
-    with open(config_path, "r", encoding="utf-8") as f:
-        cfg = json.load(f)
+    def __init__(self, config_path):
+        self.config_path = config_path
+        self.font = CHINESE_FONT
+        
+    def generate(self):
+        """
+        Generate Cornell notebook PDF based on configuration
+        """
+        with open(self.config_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
 
-    output = cfg.get("output", "notebook.pdf")
-    page_cfg = cfg.get("page", {})
-    page_size_name = page_cfg.get("size", "A4")
-    page_size = PAPER_SIZES.get(page_size_name, A4) 
-    orientation = page_cfg.get("orientation", "portrait")
-    if orientation == "landscape":
-        W, H = landscape(page_size)
-    else:
-        W, H = portrait(page_size)
+        output = cfg.get("output", "notebook.pdf")
+        page_cfg = cfg.get("page", {})
+        page_size_name = page_cfg.get("size", "A4")
+        page_size = PAPER_SIZES.get(page_size_name, A4) 
+        orientation = page_cfg.get("orientation", "portrait")
+        if orientation == "landscape":
+            W, H = landscape(page_size)
+        else:
+            W, H = portrait(page_size)
 
-    c = canvas.Canvas(output, pagesize=(W, H))
+        c = canvas.Canvas(output, pagesize=(W, H))
 
-    header_cfg = cfg.get("header", {})
-    footer_cfg = cfg.get("footer", {})
-    modules = cfg.get("modules", [])
-    # Get quote configuration separately
-    quote_cfg = cfg.get("quote", {})
+        header_cfg = cfg.get("header", {})
+        footer_cfg = cfg.get("footer", {})
+        modules = cfg.get("modules", [])
+        # Get quote configuration separately
+        quote_cfg = cfg.get("quote", {})
 
-    header_h = header_cfg.get("height_mm", 0) * MM_TO_POINTS
-    footer_h = footer_cfg.get("height_mm", 0) * MM_TO_POINTS
-    # Get quote height from quote config in mm and convert to points
-    quote_h_mm = quote_cfg.get("height_mm", 0)
-    quote_h = quote_h_mm * MM_TO_POINTS
+        header_h = header_cfg.get("height_mm", 0) * MM_TO_POINTS
+        footer_h = footer_cfg.get("height_mm", 0) * MM_TO_POINTS
+        # Get quote height from quote config in mm and convert to points
+        quote_h_mm = quote_cfg.get("height_mm", 0)
+        quote_h = quote_h_mm * MM_TO_POINTS
 
-    step = page_cfg.get("line_step_mm", 9) * MM_TO_POINTS
-    renderer = ComponentRenderer(c, CHINESE_FONT)
+        step = page_cfg.get("line_step_mm", 9) * MM_TO_POINTS
 
-    # Adjust margins with binding margin consideration
-    # For binding, we add extra base_margin to both sides to allow for proper hole punching/clipboarding
-    # Support for individual binding margins
-    base_margin = page_cfg.get("base_margin", 0)
-    left_binding_margin = page_cfg.get("left_binding_margin", 0)
-    right_binding_margin = page_cfg.get("right_binding_margin", 0)
-    top_binding_margin = page_cfg.get("top_binding_margin", 0)
-    bottom_binding_margin = page_cfg.get("bottom_binding_margin", 0)
+        # Adjust margins with binding margin consideration
+        # For binding, we add extra base_margin to both sides to allow for proper hole punching/clipboarding
+        # Support for individual binding margins
+        base_margin = page_cfg.get("base_margin", 0)
+        left_binding_margin = page_cfg.get("left_binding_margin", 0)
+        right_binding_margin = page_cfg.get("right_binding_margin", 0)
+        top_binding_margin = page_cfg.get("top_binding_margin", 0)
+        bottom_binding_margin = page_cfg.get("bottom_binding_margin", 0)
 
-    left_margin = left_binding_margin + base_margin
-    right_margin = right_binding_margin + base_margin
-    top_margin = top_binding_margin + base_margin
-    bottom_margin = bottom_binding_margin + base_margin
-    usable_h = H - top_margin - bottom_margin - header_h - quote_h - footer_h
+        left_margin = left_binding_margin + base_margin
+        right_margin = right_binding_margin + base_margin
+        top_margin = top_binding_margin + base_margin
+        bottom_margin = bottom_binding_margin + base_margin
+        usable_h = H - top_margin - bottom_margin - header_h - quote_h - footer_h
 
-    # Draw header (L0[0])
-    renderer.draw_header(left_margin, H - top_margin, W - left_margin - right_margin, header_h, header_cfg)
+        # Draw header (L0[0])
+        header_renderer = HeaderRenderer(c, self.font)
+        header_renderer.draw(left_margin, H - top_margin, W - left_margin - right_margin, header_h, header_cfg)
 
-    # Draw quote area (L0[1]) - now handled separately from header
-    if quote_cfg:
-        quote_y = H - top_margin - header_h - quote_h
-        renderer.draw_quote_box(left_margin, quote_y, W - left_margin - right_margin, quote_h, quote_cfg)
+        # Draw quote area (L0[1]) - now handled separately from header
+        if quote_cfg:
+            quote_y = H - top_margin - header_h - quote_h
+            quote_renderer = QuoteBoxRenderer(c, self.font)
+            quote_renderer.draw(left_margin, quote_y, W - left_margin - right_margin, quote_h, quote_cfg)
 
-    # Draw Cornell modules (L0[2])
-    if modules:
-        Unused_space = usable_h - (usable_h // (step * len(modules))) * (step * len(modules))
-        module_h = (usable_h // (step * len(modules))) * step
-        y = H - top_margin - header_h - quote_h
-        for m in modules:
-            renderer.draw_cornell_module(left_margin, y, W - left_margin - right_margin, module_h, m)
-            y -= module_h
+        # Draw Cornell modules (L0[2])
+        if modules:
+            Unused_space = usable_h - (usable_h // (step * len(modules))) * (step * len(modules))
+            module_h = (usable_h // (step * len(modules))) * step
+            y = H - top_margin - header_h - quote_h
+            for m in modules:
+                cornell_renderer = CornellModuleRenderer(c, self.font)
+                cornell_renderer.draw(left_margin, y, W - left_margin - right_margin, module_h, m)
+                y -= module_h
 
-    # Draw footer (L0[3])
-    renderer.draw_footer(left_margin, bottom_margin, W - left_margin - right_margin, footer_h, footer_cfg)
+        # Draw footer (L0[3])
+        footer_renderer = FooterRenderer(c, self.font)
+        footer_renderer.draw(left_margin, bottom_margin, W - left_margin - right_margin, footer_h, footer_cfg)
 
-    c.showPage()
-    c.save()
-    print(f"✅ Notebook template generated: {output}")
+        c.showPage()
+        c.save()
+        print(f"✅ Notebook template generated: {output}")
 
 
 if __name__ == "__main__":
@@ -650,4 +708,5 @@ if __name__ == "__main__":
         print("Usage: python Cornell_gen_1102.py config.json")
         sys.exit(1)
 
-    generate_notebook(sys.argv[1])
+    generator = NotebookGenerator(sys.argv[1])
+    generator.generate()
