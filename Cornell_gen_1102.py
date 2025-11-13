@@ -216,6 +216,129 @@ class TextBoxRenderer(BaseRenderer):
         
         return width, height
 
+class AreaMatrixRenderer(BaseRenderer):
+    """
+    Renderer for generic rectangular areas with customizable borders, grids and text
+    """
+    
+    def draw(self, x, y, width, height, config):
+        """
+        Draw a customizable rectangular area with optional border, grid and text fill
+        """
+        # Draw border if enabled
+        border_style = config.get("border_style", "solid")
+        border_enabled = config.get("border_enabled", False)
+        border_color = config.get("border_color", "black")
+        
+        if border_enabled:
+            self._draw_border(x, y, width, height, border_style, border_color, config)
+        
+        # Draw grid if specified
+        grid_type = config.get("grid_type", None)
+        if grid_type:
+            self._draw_grid(x, y, width, height, grid_type, config)
+        
+        # Fill with text if specified
+        fill_text = config.get("fill_text", "")
+        if fill_text:
+            self._draw_fill_text(x, y, width, height, fill_text, config)
+    
+    def _draw_border(self, x, y, width, height, style, color, config):
+        """
+        Draw border around the area with specified style
+        """
+        # Set color
+        if color == "black":
+            self.canvas.setStrokeColor(black)
+        elif color == "lightgrey":
+            self.canvas.setStrokeColor(lightgrey)
+        elif color == "blue":
+            self.canvas.setStrokeColor(blue)
+        # Add more colors as needed
+        
+        # Set line style
+        if style == "dashed":
+            self.canvas.setDash(2, 2)
+        elif style == "dotted":
+            self.canvas.setDash(1, 2)
+        # solid is default (no dash)
+        
+        # Get individual border side configurations
+        border_sides = config.get("border_sides", {})
+        top_enabled = border_sides.get("top", True)
+        bottom_enabled = border_sides.get("bottom", True)
+        left_enabled = border_sides.get("left", True)
+        right_enabled = border_sides.get("right", True)
+        
+        # Draw each enabled side
+        if top_enabled:
+            self.canvas.line(x, y + height, x + width, y + height)
+        if bottom_enabled:
+            self.canvas.line(x, y, x + width, y)
+        if left_enabled:
+            self.canvas.line(x, y, x, y + height)
+        if right_enabled:
+            self.canvas.line(x + width, y, x + width, y + height)
+        
+        # Reset dash to solid
+        self.canvas.setDash()
+    
+    def _draw_grid(self, x, y, width, height, grid_type, config):
+        """
+        Draw specified grid type within the area
+        """
+        grid_renderer = GridRenderer()
+        
+        if grid_type == "dotted":
+            spacing = config.get("grid_spacing", 20) * MM_TO_POINTS
+            grid_renderer.draw_dotted_grid(self.canvas, x, y, width, height, spacing)
+        elif grid_type == "single_line":
+            step = config.get("grid_line_step_mm", 9) * MM_TO_POINTS
+            grid_renderer.draw_single_line_grid(self.canvas, x, y, width, height, step)
+        elif grid_type == "four_line_three_grid":
+            row_heights_mm = config.get("grid_row_heights_mm", [3, 3, 3])
+            row_heights = [h * MM_TO_POINTS for h in row_heights_mm]
+            spacing = config.get("grid_line_spacing_mm", 0) * MM_TO_POINTS
+            grid_renderer.draw_four_line_three_grid(self.canvas, x, y, width, height, spacing, row_heights)
+        elif grid_type == "english_grid":
+            spacing = config.get("grid_line_spacing_mm", 8) * MM_TO_POINTS
+            grid_renderer.draw_english_grid(self.canvas, x, y, width, height, spacing)
+        elif grid_type == "tianzige":
+            cell_size = config.get("grid_cell_size_mm", 30) * MM_TO_POINTS
+            grid_renderer.draw_tianzige_grid(self.canvas, x, y, width, height, cell_size)
+    
+    def _draw_fill_text(self, x, y, width, height, text, config):
+        """
+        Fill the area with specified text
+        """
+        text_alignment = config.get("text_alignment", "left")
+        vertical_alignment = config.get("vertical_alignment", "top")
+        text_padding = config.get("text_padding", 2)
+        font_size = config.get("font_size", 12)
+        
+        self.canvas.setFont(self.font, font_size)
+        text_width = self.canvas.stringWidth(text, self.font, font_size)
+        text_height = font_size
+        
+        # Calculate Y position based on vertical alignment
+        if vertical_alignment == "top":
+            text_y = y + height - text_padding - text_height
+        elif vertical_alignment == "middle":
+            text_y = y + (height / 2) - (text_height / 2)
+        else:  # bottom
+            text_y = y + text_padding
+        
+        # Calculate X position based on horizontal alignment
+        if text_alignment == "left":
+            text_x = x + text_padding
+        elif text_alignment == "center":
+            text_x = x + (width / 2) - (text_width / 2)
+        else:  # right
+            text_x = x + width - text_padding - text_width
+        
+        # Draw text
+        self.canvas.drawString(text_x, text_y, text)
+
 
 class HeaderRenderer(BaseRenderer):
     """
