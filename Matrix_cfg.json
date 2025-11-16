@@ -1,6 +1,6 @@
 {
   "output": "matrix_notebook.pdf",
-  "page": {
+  "page_format": {
     "size": "A4",
     "orientation": "portrait",
     "margin": 20

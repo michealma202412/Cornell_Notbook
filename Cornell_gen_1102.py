@@ -368,7 +368,7 @@ class HeaderRenderer(BaseRenderer):
             vertical_alignment = field.get("vertical_alignment", "top")
             vertical_padding = field.get("vertical_padding", 3)
             
-            text = field["label"] + ":"
+            text = field["label"]
             text_width = self.canvas.stringWidth(text, self.font, 12)
             text_height = 12
             
@@ -410,7 +410,7 @@ class QuoteBoxRenderer(BaseRenderer):
         quote_label_padding = config.get("quote_label_padding", 0)
         quote_vertical_padding = quote.get("vertical_padding", 0)
         
-        quote_text = quote["label"] + ":"
+        quote_text = quote["label"]
         quote_text_width = self.canvas.stringWidth(quote_text, self.font, 12)
         quote_text_height = 12
         
@@ -533,8 +533,8 @@ class CornellModuleRenderer(BaseRenderer):
         
         # 调整关键词标签的Y坐标，使其与第一行格线对齐
         keyword_label_y = y - theme_h - step + step / 4
-        if theme_h > 0:
-            self.canvas.drawString(keyword_label_x, keyword_label_y, keyword_label)
+
+        self.canvas.drawString(keyword_label_x, keyword_label_y, keyword_label)
         
         # Summary section label
         if summary_h > 0:
@@ -757,71 +757,88 @@ class NotebookGenerator:
             cfg = json.load(f)
 
         output = cfg.get("output", "notebook.pdf")
-        page_cfg = cfg.get("page", {})
-        page_size_name = page_cfg.get("size", "A4")
-        page_size = PAPER_SIZES.get(page_size_name, A4) 
-        orientation = page_cfg.get("orientation", "portrait")
-        if orientation == "landscape":
-            W, H = landscape(page_size)
-        else:
-            W, H = portrait(page_size)
+        
+        # Check if we have pages array (multi-page format) or single page config
+        pages = cfg.get("pages", [])
+        if not pages:
+            # Handle single page configuration for backward compatibility
+            pages = [cfg]
+        
+        # Create PDF canvas once, before processing pages
+        c = canvas.Canvas(output)
 
-        c = canvas.Canvas(output, pagesize=(W, H))
+        # Process each page configuration
+        for page_index, page_cfg in enumerate(pages):
+            
+            # 获取当前页的页面格式设置
+            format = page_cfg.get("page_format", {})
+            page_size_name = format.get("size", "A4")
+            page_size = PAPER_SIZES.get(page_size_name, A4) 
+            orientation = format.get("orientation", "portrait")
+            if orientation == "landscape":
+                W, H = landscape(page_size)
+            else:
+                W, H = portrait(page_size)
+                
+            # 为每一页设置页面尺寸
+            c.setPageSize((W, H))
 
-        header_cfg = cfg.get("header", {})
-        footer_cfg = cfg.get("footer", {})
-        modules = cfg.get("modules", [])
-        # Get quote configuration separately
-        quote_cfg = cfg.get("quote", {})
+            header_cfg = page_cfg.get("header", {})
+            footer_cfg = page_cfg.get("footer", {})
+            modules = page_cfg.get("modules", [])
+            # Get quote configuration separately
+            quote_cfg = page_cfg.get("quote", {})
 
-        header_h = header_cfg.get("height_mm", 0) * MM_TO_POINTS
-        footer_h = footer_cfg.get("height_mm", 0) * MM_TO_POINTS
-        # Get quote height from quote config in mm and convert to points
-        quote_h_mm = quote_cfg.get("height_mm", 0)
-        quote_h = quote_h_mm * MM_TO_POINTS
+            header_h = header_cfg.get("height_mm", 0) * MM_TO_POINTS
+            footer_h = footer_cfg.get("height_mm", 0) * MM_TO_POINTS
+            # Get quote height from quote config in mm and convert to points
+            quote_h_mm = quote_cfg.get("height_mm", 0)
+            quote_h = quote_h_mm * MM_TO_POINTS
 
-        step = page_cfg.get("line_step_mm", 9) * MM_TO_POINTS
+            step = format.get("line_step_mm", 9) * MM_TO_POINTS
 
-        # Adjust margins with binding margin consideration
-        # For binding, we add extra base_margin to both sides to allow for proper hole punching/clipboarding
-        # Support for individual binding margins
-        base_margin = page_cfg.get("base_margin", 0)
-        left_binding_margin = page_cfg.get("left_binding_margin", 0)
-        right_binding_margin = page_cfg.get("right_binding_margin", 0)
-        top_binding_margin = page_cfg.get("top_binding_margin", 0)
-        bottom_binding_margin = page_cfg.get("bottom_binding_margin", 0)
+            # Adjust margins with binding margin consideration
+            # For binding, we add extra base_margin to both sides to allow for proper hole punching/clipboarding
+            # Support for individual binding margins
+            base_margin = format.get("base_margin", 0)
+            left_binding_margin = format.get("left_binding_margin", 0)
+            right_binding_margin = format.get("right_binding_margin", 0)
+            top_binding_margin = format.get("top_binding_margin", 0)
+            bottom_binding_margin = format.get("bottom_binding_margin", 0)
 
-        left_margin = left_binding_margin + base_margin
-        right_margin = right_binding_margin + base_margin
-        top_margin = top_binding_margin + base_margin
-        bottom_margin = bottom_binding_margin + base_margin
-        usable_h = H - top_margin - bottom_margin - header_h - quote_h - footer_h
+            left_margin = left_binding_margin + base_margin
+            right_margin = right_binding_margin + base_margin
+            top_margin = top_binding_margin + base_margin
+            bottom_margin = bottom_binding_margin + base_margin
+            usable_h = H - top_margin - bottom_margin - header_h - quote_h - footer_h
 
-        # Draw header (L0[0])
-        header_renderer = HeaderRenderer(c, self.font)
-        header_renderer.draw(left_margin, H - top_margin, W - left_margin - right_margin, header_h, header_cfg)
+            # Draw header (L0[0])
+            header_renderer = HeaderRenderer(c, self.font)
+            header_renderer.draw(left_margin, H - top_margin, W - left_margin - right_margin, header_h, header_cfg)
 
-        # Draw quote area (L0[1]) - now handled separately from header
-        if quote_cfg:
-            quote_y = H - top_margin - header_h - quote_h
-            quote_renderer = QuoteBoxRenderer(c, self.font)
-            quote_renderer.draw(left_margin, quote_y, W - left_margin - right_margin, quote_h, quote_cfg)
+            # Draw quote area (L0[1]) - now handled separately from header
+            if quote_cfg:
+                quote_y = H - top_margin - header_h - quote_h
+                quote_renderer = QuoteBoxRenderer(c, self.font)
+                quote_renderer.draw(left_margin, quote_y, W - left_margin - right_margin, quote_h, quote_cfg)
 
-        # Draw Cornell modules (L0[2])
-        if modules:
-            Unused_space = usable_h - (usable_h // (step * len(modules))) * (step * len(modules))
-            module_h = (usable_h // (step * len(modules))) * step
-            y = H - top_margin - header_h - quote_h
-            for m in modules:
-                cornell_renderer = CornellModuleRenderer(c, self.font)
-                cornell_renderer.draw(left_margin, y, W - left_margin - right_margin, module_h, m)
-                y -= module_h
+            # Draw Cornell modules (L0[2])
+            if modules:
+                Unused_space = usable_h - (usable_h // (step * len(modules))) * (step * len(modules))
+                module_h = (usable_h // (step * len(modules))) * step
+                y = H - top_margin - header_h - quote_h
+                for m in modules:
+                    cornell_renderer = CornellModuleRenderer(c, self.font)
+                    cornell_renderer.draw(left_margin, y, W - left_margin - right_margin, module_h, m)
+                    y -= module_h
 
-        # Draw footer (L0[3])
-        footer_renderer = FooterRenderer(c, self.font)
-        footer_renderer.draw(left_margin, bottom_margin, W - left_margin - right_margin, footer_h, footer_cfg)
+            # Draw footer (L0[3])
+            footer_renderer = FooterRenderer(c, self.font)
+            footer_renderer.draw(left_margin, bottom_margin, W - left_margin - right_margin, footer_h, footer_cfg)
 
-        c.showPage()
+            # Add a new page for the next iteration (except for the last page)
+            if page_index < len(pages) - 1:
+                c.showPage()
         c.save()
         print(f"✅ Notebook template generated: {output}")
 

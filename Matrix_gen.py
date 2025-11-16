@@ -23,7 +23,7 @@ class MatrixNotebookGenerator:
             cfg = json.load(f)
 
         output = cfg.get("output", "matrix_notebook.pdf")
-        page_cfg = cfg.get("page", {})
+        page_cfg = cfg.get("page_format", {})
         page_size_name = page_cfg.get("size", "A4")
         page_size = PAPER_SIZES.get(page_size_name, A4) 
         orientation = page_cfg.get("orientation", "portrait")

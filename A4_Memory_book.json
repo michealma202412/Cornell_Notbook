@@ -1,6 +1,6 @@
 {
   "output": "A4_Memory_book.pdf",
-  "page": {
+  "page_format": {
     "size": "A4",
     "orientation": "landscape",
     "base_margin": 2.834645669,

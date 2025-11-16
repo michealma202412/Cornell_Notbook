@@ -77,7 +77,7 @@ color_light_blue = "#8fbfff"  # a light blue
 sep_color = "black"
 
 # Titles (from right to left across the 7 content columns)
-titles_right_to_left = ["day2", "day7", "day15", "day28", "day49", "day1&83"]
+titles_right_to_left = ["day2:", "day7:", "day15:", "day28:", "day49:", "day1&83:"]
 
 # --- Calculate column widths ---
 usable_width = A4_w_mm - binding_width - left_margin - right_margin
@@ -134,14 +134,15 @@ ax.add_line(Line2D([x_content_left, x_content_left], [0, A4_h_mm], linewidth=0.6
 ax.add_line(Line2D([x_content_right, x_content_right], [0, A4_h_mm], linewidth=0.6, color=color_light_gray, linestyle='solid'))
 
 # Write titles at top of each content column from right to left
-fontdict = {"fontsize": 9, "ha": "center", "va": "bottom"}
+fontdict = {"fontsize": 9, "ha": "left", "va": "bottom"}
 for i in range(num_content_cols):
     col_x0 = binding_width + left_margin + i * col_width
     col_x1 = col_x0 + col_width
-    center_x = (col_x0 + col_x1) / 2.0
+    # Changed from center_x to left-aligned position with small padding
+    text_x = col_x0 + 1.0  # Small padding from left edge
     idx_from_right = num_content_cols - 1 - i
     title = titles_right_to_left[idx_from_right]
-    ax.text(center_x, A4_h_mm - top_margin + 1.5, title, fontdict=fontdict)
+    ax.text(text_x, A4_h_mm - top_margin + 1.5, title, fontdict=fontdict)
 #标注装订区域
 ax.text(binding_width/2.0, A4_h_mm - top_margin + 1.5, "装订", fontdict={"fontsize":8, "ha":"center", "va":"bottom"}, rotation=90, bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.7))
 
