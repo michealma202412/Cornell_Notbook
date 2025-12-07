@@ -534,7 +534,13 @@ class CornellModuleRenderer(BaseRenderer):
         # 调整关键词标签的Y坐标，使其与第一行格线对齐
         keyword_label_y = y - theme_h - step + step / 4
 
-        self.canvas.drawString(keyword_label_x, keyword_label_y, keyword_label)
+        # Handle keyword_label as list or string
+        if isinstance(keyword_label, list):
+            for i, label in enumerate(keyword_label):
+                label_y = keyword_label_y - i * step
+                self.canvas.drawString(keyword_label_x, label_y, label)
+        else:
+            self.canvas.drawString(keyword_label_x, keyword_label_y, keyword_label)
         
         # Summary section label
         if summary_h > 0:
