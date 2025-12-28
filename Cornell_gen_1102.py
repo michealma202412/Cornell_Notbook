@@ -1,7 +1,7 @@
 import json
 import sys
 from reportlab.lib.pagesizes import A4, landscape, portrait
-from reportlab.lib.colors import black, lightgrey, blue, lightblue
+from reportlab.lib.colors import black, lightgrey, blue, lightblue,gray
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -72,9 +72,10 @@ class GridRenderer:
         for i in range(n):
             base_y = y - i * total_row_height
             # Line 1 - light grey dashed line
-            c.setStrokeColor(lightgrey)
-            # c.setDash(1, 2)
+            c.setStrokeColor(gray)
+            c.setDash(1, 2)
             c.line(x, base_y, x + width, base_y)
+            c.setDash()
             # Line 2 - blue dash line
             #c.setDash(1,2)
             c.setStrokeColor(lightblue)
@@ -82,10 +83,11 @@ class GridRenderer:
             # Line 3 - blue solid line
             c.line(x, base_y - row_heights[0] - row_heights[1], x + width, base_y - row_heights[0] - row_heights[1])
             # Line 4 - light grey solid line
-            c.setStrokeColor(lightgrey)
+            c.setDash(1,2)
+            c.setStrokeColor(gray)
             c.line(x, base_y - row_heights[0] - row_heights[1] - row_heights[2], 
                    x + width, base_y - row_heights[0] - row_heights[1] - row_heights[2])
-
+            c.setDash()
     @staticmethod
     def draw_dotted_grid(c, x, y, width, height, dot_spacing=20):
         """

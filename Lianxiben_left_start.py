@@ -30,7 +30,7 @@ grid_configs = {
     },
     "英语抄写本（成人）": {
         "upper_h": 4.0,   # 上格 4 mm
-        "middle_h": 6.0,  # 中格 6 mm
+        "middle_h": 4.0,  # 中格 6 mm
         "lower_h": 4.0,   # 下格 4 mm
         "intercell_gap": 0,
         "description": "紧凑，用于速度练习"
